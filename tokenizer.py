@@ -41,6 +41,7 @@ punctuation = {
     ")",
     "[",
     "]",
+    ",",
     "end",
     "do",
     "then",
@@ -48,7 +49,7 @@ punctuation = {
 
 
 def tokenize(line: str) -> list[tuple[str, Token]]:
-    tokens = re.findall(r"\w+|<-|[+\-*/=<>!]+|[(){}\[\]]|and|or|not", line)
+    tokens = re.findall(r"\w+|<-|[+\-*/=<>!]+|[(),{}\[\]]|and|or|not", line)
 
     result: list[tuple[str, Token]] = []
     for token in tokens:
@@ -62,8 +63,6 @@ def tokenize(line: str) -> list[tuple[str, Token]]:
             result.append((token, Token.LITERAL))
         elif re.match(r'^".*"$|^\'.*\'$', token):
             result.append((token, Token.LITERAL))
-        elif token == ",":
-            continue
         else:
             result.append((token, Token.IDENTIFIER))
     return result
