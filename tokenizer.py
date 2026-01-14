@@ -49,7 +49,7 @@ punctuation = {
 
 
 def tokenize(line: str) -> list[tuple[str, Token]]:
-    tokens = re.findall(r"\w+|<-|[+\-*/=<>!]+|[(),{}\[\]]|and|or|not", line)
+    tokens = re.findall(r"-?\d+|\w+|<-|[+\-*/=<>!]+|[(),{}\[\]]|and|or|not", line)
 
     result: list[tuple[str, Token]] = []
     for token in tokens:
@@ -59,7 +59,7 @@ def tokenize(line: str) -> list[tuple[str, Token]]:
             result.append((token, Token.OPERATOR))
         elif token in punctuation:
             result.append((token, Token.PUNCTUATION))
-        elif re.match(r"^\d+$", token):
+        elif re.match(r"^-?\d+$", token):  # Support negative numbers
             result.append((token, Token.LITERAL))
         elif re.match(r'^".*"$|^\'.*\'$', token):
             result.append((token, Token.LITERAL))
