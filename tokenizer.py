@@ -41,6 +41,8 @@ operators = {
 punctuation = {
     "(",
     ")",
+    "[",
+    "]",
     "end",
     "do",
     "then",
@@ -48,7 +50,7 @@ punctuation = {
 
 
 def tokenize(line: str) -> list[tuple[str, Token]]:
-    tokens = re.findall(r"\w+|<-|[+\-*/=<>!]+|[(),]|and|or|not", line)
+    tokens = re.findall(r"\w+|<-|[+\-*/=<>!]+|[(){}\[\]]|and|or|not", line)
 
     result: list[tuple[str, Token]] = []
     for token in tokens:
@@ -70,7 +72,12 @@ def tokenize(line: str) -> list[tuple[str, Token]]:
 
 
 def validate_syntax(tokens):
-    matching_pairs = {"(": ")", "do": "end", "then": "end"}
+    matching_pairs = {
+        "(": ")",
+        "do": "end",
+        "[": "]",
+        "then": "end",
+    }
 
     stack = []
     for i, (value, token_type) in enumerate(tokens):
