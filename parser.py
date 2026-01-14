@@ -111,6 +111,16 @@ class Block(ASTNode):
         return f"Block({self.statements})"
 
 
+class FunctionStatement(ASTNode):
+    def __init__(self, name, param_ids, body):
+        self.name = name
+        self.param_ids = param_ids
+        self.body = body
+
+    def __repr__(self):
+        return f"Function({self.name}, {self.param_ids}, {self.body})"
+
+
 class Parser:
     def __init__(self, tokens: list[tuple[str, Token]]):
         self.tokens = tokens
@@ -161,6 +171,8 @@ class Parser:
             return self.parse_for_loop()
         elif value == "return":
             return self.parse_return_statement()
+        elif value == "Algorithm":
+            return self.parse_function()
         elif token_type == Token.IDENTIFIER:
             return self.parse_assignment_or_expression()
         else:
@@ -169,7 +181,12 @@ class Parser:
     def parse_if_statement(self) -> IfStatement:
         self.consume("if")
         condition = self.parse_expression()
-        self.consume("then")
+
+        token = self.current_token()
+        if token and token[0] in ["then", "do"]:
+            self.consume()
+        else:
+            raise SyntaxError(f"Expected 'then' or 'do' after if condition, got '{token[0] if token else 'EOF'}'")
 
         then_block = []
         while self.current_token() and self.current_token()[0] not in [
@@ -365,3 +382,40 @@ class Parser:
 
         self.consume("]")
         return ArrayLiteral(elements)
+
+    def parse_function(self):
+        self.consume("Algorithm")
+        value = self.consume()
+
+        if value[1] is not Token.IDENTIFIER:
+            raise SyntaxError(f"Unexpected token: {value}")
+        name = Identifier(value[0])
+        self.consume("(")
+        params = []
+        
+
+        if self.current_token()[0] != ")":
+            value = self.consume()
+            if value[1] is not Token.IDENTIFIER:
+                raise SyntaxError(f"Expected parameter name, got: {value}")
+            params.append(Identifier(value[0]))
+            
+            while self.current_token()[0] == ",":
+                self.consume(",")
+                value = self.consume()
+                if value[1] is not Token.IDENTIFIER:
+                    raise SyntaxError(f"Expected parameter name, got: {value}")
+                params.append(Identifier(value[0]))
+        
+        self.consume(")")
+        self.consume("do")
+        
+
+        body = []
+        while self.current_token() and self.current_token()[0] != "end":
+            stmt = self.parse_statement()
+            if stmt:
+                body.append(stmt)
+        
+        self.consume("end")
+        return FunctionStatement(name, params, Block(body))
