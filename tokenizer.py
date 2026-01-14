@@ -1,8 +1,6 @@
 import re
 from enum import StrEnum, auto
 
-code_line = input("Enter your code: ")
-
 
 class Token(StrEnum):
     IDENTIFIER = auto()
@@ -97,8 +95,3 @@ def validate_syntax(tokens):
         return False, f"Unclosed delimiters: {stack}"
 
     return True, "Valid syntax"
-
-
-tokens = tokenize(code_line)
-print(tokens)
-print(validate_syntax(tokens))
