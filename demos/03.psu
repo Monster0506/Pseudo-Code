@@ -1,0 +1,6 @@
+Algorithm sumArray(A, n) do
+    total <- 0
+    for i <- 0 to n - 1 do
+        total = total + A[i]
+    end
+end

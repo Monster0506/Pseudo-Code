@@ -1,0 +1,8 @@
+Algorithm linearSearch(A, n, target) do
+    for i <- 0 to n - 1 do
+        if A[i] = target then
+            return i
+        end
+    end
+    return -1
+end

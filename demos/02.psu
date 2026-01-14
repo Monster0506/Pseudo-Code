@@ -1,0 +1,8 @@
+Algorithm minArray(A, n) do
+    currMin <- A[0]
+    for i <- 1 to n - 1 do
+        if currMin > A[i] then
+            currMin = A[i]
+        end
+    end
+end
