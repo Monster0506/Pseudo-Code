@@ -1,6 +1,7 @@
 import re
 from tokens import Token, keywords, operators, punctuation
 
+
 def tokenize(line: str) -> list[tuple[str, Token]]:
     tokens = re.findall(r"-?\d+|\w+|<-|[+\-*/=<>!]+|[(),{}\[\]]|and|or|not", line)
 

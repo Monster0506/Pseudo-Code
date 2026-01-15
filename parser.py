@@ -186,7 +186,9 @@ class Parser:
         if token and token[0] in ["then", "do"]:
             self.consume()
         else:
-            raise SyntaxError(f"Expected 'then' or 'do' after if condition, got '{token[0] if token else 'EOF'}'")
+            raise SyntaxError(
+                f"Expected 'then' or 'do' after if condition, got '{token[0] if token else 'EOF'}'"
+            )
 
         then_block = []
         while self.current_token() and self.current_token()[0] not in [
@@ -392,30 +394,28 @@ class Parser:
         name = Identifier(value[0])
         self.consume("(")
         params = []
-        
 
         if self.current_token()[0] != ")":
             value = self.consume()
             if value[1] is not Token.IDENTIFIER:
                 raise SyntaxError(f"Expected parameter name, got: {value}")
             params.append(Identifier(value[0]))
-            
+
             while self.current_token()[0] == ",":
                 self.consume(",")
                 value = self.consume()
                 if value[1] is not Token.IDENTIFIER:
                     raise SyntaxError(f"Expected parameter name, got: {value}")
                 params.append(Identifier(value[0]))
-        
+
         self.consume(")")
         self.consume("do")
-        
 
         body = []
         while self.current_token() and self.current_token()[0] != "end":
             stmt = self.parse_statement()
             if stmt:
                 body.append(stmt)
-        
+
         self.consume("end")
         return FunctionStatement(name, params, Block(body))
