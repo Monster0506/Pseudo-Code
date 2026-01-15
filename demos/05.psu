@@ -1,8 +1,11 @@
-Algorithm linearSearch(A, n, target) do
+Algorithm bubbleSort(A, n) do
     for i <- 0 to n - 1 do
-        if A[i] = target then
-            return i
+        for j <- 0 to n - 2 do
+            if A[j] > A[j + 1] then
+                t <- A[j]
+                A[j] <- A[j + 1]
+                A[j + 1] <- t
+            end
         end
     end
-    return -1
 end
