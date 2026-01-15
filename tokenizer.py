@@ -1,52 +1,5 @@
 import re
-from enum import StrEnum, auto
-
-
-class Token(StrEnum):
-    IDENTIFIER = auto()
-    LITERAL = auto()
-    OPERATOR = auto()
-    KEYWORD = auto()
-    PUNCTUATION = auto()
-
-
-keywords = {
-    "if",
-    "else",
-    "while",
-    "for",
-    "return",
-    "Algorithm",
-}
-
-operators = {
-    "+",
-    "-",
-    "*",
-    "/",
-    "=",
-    "<-",
-    "!=",
-    "<",
-    ">",
-    "<=",
-    ">=",
-    "and",
-    "or",
-    "not",
-}
-
-punctuation = {
-    "(",
-    ")",
-    "[",
-    "]",
-    ",",
-    "end",
-    "do",
-    "then",
-}
-
+from tokens import Token, keywords, operators, punctuation
 
 def tokenize(line: str) -> list[tuple[str, Token]]:
     tokens = re.findall(r"-?\d+|\w+|<-|[+\-*/=<>!]+|[(),{}\[\]]|and|or|not", line)
@@ -59,7 +12,7 @@ def tokenize(line: str) -> list[tuple[str, Token]]:
             result.append((token, Token.OPERATOR))
         elif token in punctuation:
             result.append((token, Token.PUNCTUATION))
-        elif re.match(r"^-?\d+$", token):  # Support negative numbers
+        elif re.match(r"^-?\d+$", token):
             result.append((token, Token.LITERAL))
         elif re.match(r'^".*"$|^\'.*\'$', token):
             result.append((token, Token.LITERAL))

@@ -1,4 +1,4 @@
-from tokenizer import Token
+from tokens import Token
 
 
 class ASTNode:
