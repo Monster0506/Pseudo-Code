@@ -1,10 +1,18 @@
+from sys import argv
+
 from parser import Parser
 from tokenizer import tokenize, validate_syntax
 
-code_line = input("Enter your code: ")
 
-tokens = tokenize(code_line)
-print(validate_syntax(tokens))
+def get_code(filename):
+    with open(filename, "r") as f:
+        contents = f.read()
+    return contents
+
+
+tokens = tokenize(get_code(argv[1]))
+if not validate_syntax(tokens)[0]:
+    raise SyntaxError(validate_syntax(tokens)[1]) 
 
 try:
     parser = Parser(tokens)
