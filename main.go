@@ -63,6 +63,16 @@ func main() {
 	fmt.Println(sep)
 
 	vm := NewVM(instrs, funcTable)
+	if vm.Counters != nil {
+		for k, v := range initial {
+			switch v.Kind {
+			case TypeInt:
+				vm.Counters.InputSizes[k] = int64(v.IntVal)
+			case TypeArray:
+				vm.Counters.InputSizes[k] = int64(len(v.ArrVal))
+			}
+		}
+	}
 	result, err := vm.Run(initial)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "runtime error:", err)
