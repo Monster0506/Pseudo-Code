@@ -1,5 +1,5 @@
 version = 1
-requires-python = ">=3.14"
+requires-python = ">=3.11"
 
 [[package]]
 name = "colorama"
@@ -38,19 +38,15 @@ wheels = [
 ]
 
 [[package]]
-name = "pseudo"
-version = "0.1.0"
+name = "pseudo-tests"
+version = "0.0.0"
 source = { virtual = "." }
-
-[package.dev-dependencies]
-dev = [
+dependencies = [
     { name = "pytest" },
 ]
 
 [package.metadata]
-
-[package.metadata.requires-dev]
-dev = [{ name = "pytest", specifier = ">=9.1.1" }]
+requires-dist = [{ name = "pytest", specifier = ">=9.1.1" }]
 
 [[package]]
 name = "pygments"
