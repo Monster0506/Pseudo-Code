@@ -6,6 +6,12 @@ import (
 	"strings"
 )
 
+type CallFrame struct {
+	returnPC     int
+	savedVars    map[string]Value
+	resultTarget string
+}
+
 type VM struct {
 	instrs    []Instruction
 	funcTable map[string]FuncEntry
@@ -13,6 +19,7 @@ type VM struct {
 	vars      map[string]Value
 	lastCmp   bool
 	retVal    *Value
+	callStack []CallFrame
 }
 
 func NewVM(instrs []Instruction, funcTable map[string]FuncEntry) *VM {
@@ -144,8 +151,26 @@ func (vm *VM) execOne(instr Instruction) (int, error) {
 		}
 
 	case CAL:
+		funcName := ops[0]
+		argOps := ops[1 : len(ops)-1]
 		resultTarget := ops[len(ops)-1]
-		vm.vars[resultTarget] = IntVal(0)
+		argVals := make([]Value, len(argOps))
+		for i, a := range argOps {
+			argVals[i] = vm.getVal(a)
+		}
+		entry, ok := vm.funcTable[funcName]
+		if !ok {
+			return 0, fmt.Errorf("unknown function: %q", funcName)
+		}
+		vm.callStack = append(vm.callStack, CallFrame{vm.pc + 1, deepCopyVars(vm.vars), resultTarget})
+		newVars := make(map[string]Value, len(entry.ParamNames))
+		for i, name := range entry.ParamNames {
+			if i < len(argVals) {
+				newVars[name] = argVals[i]
+			}
+		}
+		vm.vars = newVars
+		return entry.StartIdx - vm.pc - 1, nil
 
 	case PRT:
 		fmt.Println(vm.getVal(ops[0]).Format())
@@ -172,6 +197,15 @@ func (vm *VM) execOne(instr Instruction) (int, error) {
 			rv = vm.getVal(ops[0])
 		} else {
 			rv = Nil
+		}
+		if len(vm.callStack) > 0 {
+			frame := vm.callStack[len(vm.callStack)-1]
+			vm.callStack = vm.callStack[:len(vm.callStack)-1]
+			vm.vars = frame.savedVars
+			if frame.resultTarget != "" {
+				vm.vars[frame.resultTarget] = rv
+			}
+			return frame.returnPC - vm.pc - 1, nil
 		}
 		vm.retVal = &rv
 		return len(vm.instrs), nil
