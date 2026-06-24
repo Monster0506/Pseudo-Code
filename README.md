@@ -1,21 +1,45 @@
 # Pseudo
 
+An interpreter for academic-style pseudocode, written in Go.
 
-An implementation of an academic-style pseudo code format in Python
+See `demos/` for example programs.
 
-
-See the `demos/` directory for example programs
-
-Run with:
+## Running
 
 ```bash
-python main.py demos/01.psu
+go build -o pseudo .
+./pseudo demos/01.psu
 ```
 
-or if you are a cool person
+You will be prompted for the input parameters of the entry Algorithm.
+
+## Testing
 
 ```bash
-uv run main.py demos/01.psu
+python test_suite.py
 ```
 
-You will be prompted for input variables to Algorithms. Only one algorithm is allowed per file.
+Requires Python 3.11+ and [uv](https://github.com/astral-sh/uv). Run `uv sync` first if needed.
+
+## Language
+
+```
+Algorithm name(param1, param2) do
+    x <- 0
+    for i <- 0 to n - 1 do
+        if A[i] > x then
+            x <- A[i]
+        end
+    end
+    return x
+end
+```
+
+- Assignment: `<-`
+- Arithmetic: `+ - * / mod`
+- Comparison: `= != < > <= >=`
+- Logic: `and or not`
+- Control: `if/then/else/end`, `while/do/end`, `for/to/downto/do/end`, `repeat/until`
+- Print: `print <expr>`
+- Literals: `true`, `false`, `NIL`, `infinity`
+- Builtins: `length`, `abs`, `floor`, `ceil`, `sqrt`, `min`, `max`
