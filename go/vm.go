@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"math"
 	"strconv"
 	"strings"
 )
@@ -158,6 +159,14 @@ func (vm *VM) execOne(instr Instruction) (int, error) {
 		for i, a := range argOps {
 			argVals[i] = vm.getVal(a)
 		}
+		if builtin, ok := builtins[funcName]; ok {
+			res, err := builtin(argVals)
+			if err != nil {
+				return 0, err
+			}
+			vm.vars[resultTarget] = res
+			break
+		}
 		entry, ok := vm.funcTable[funcName]
 		if !ok {
 			return 0, fmt.Errorf("unknown function: %q", funcName)
@@ -211,6 +220,49 @@ func (vm *VM) execOne(instr Instruction) (int, error) {
 		return len(vm.instrs), nil
 	}
 	return 0, nil
+}
+
+var builtins = map[string]func([]Value) (Value, error){
+	"length": func(args []Value) (Value, error) {
+		if args[0].Kind == TypeArray {
+			return IntVal(len(args[0].ArrVal)), nil
+		}
+		return IntVal(1), nil
+	},
+	"floor": func(args []Value) (Value, error) {
+		return IntVal(int(math.Floor(float64(toInt(args[0]))))), nil
+	},
+	"ceil": func(args []Value) (Value, error) {
+		return IntVal(int(math.Ceil(float64(toInt(args[0]))))), nil
+	},
+	"abs": func(args []Value) (Value, error) {
+		n := toInt(args[0])
+		if n < 0 {
+			n = -n
+		}
+		return IntVal(n), nil
+	},
+	"sqrt": func(args []Value) (Value, error) {
+		return IntVal(int(math.Sqrt(float64(toInt(args[0]))))), nil
+	},
+	"min": func(args []Value) (Value, error) {
+		m := toInt(args[0])
+		for _, a := range args[1:] {
+			if v := toInt(a); v < m {
+				m = v
+			}
+		}
+		return IntVal(m), nil
+	},
+	"max": func(args []Value) (Value, error) {
+		m := toInt(args[0])
+		for _, a := range args[1:] {
+			if v := toInt(a); v > m {
+				m = v
+			}
+		}
+		return IntVal(m), nil
+	},
 }
 
 func (vm *VM) Run(initial map[string]Value) (Value, error) {
