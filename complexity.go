@@ -43,8 +43,9 @@ type VMCounters struct {
 type symExpr map[string]int
 
 type complexity struct {
-	poly   symExpr
-	logFac string
+	poly     symExpr
+	logFac   string
+	expParam string
 }
 
 var cplxO1 = complexity{poly: symExpr{}}
@@ -53,6 +54,9 @@ func cplxFromParam(p string) complexity   { return complexity{poly: symExpr{p: 1
 func cplxLog(p string) complexity         { return complexity{poly: symExpr{}, logFac: p} }
 
 func cplxDegree(c complexity) float64 {
+	if c.expParam != "" {
+		return 1000.0
+	}
 	d := 0
 	for _, e := range c.poly {
 		d += e
@@ -75,7 +79,11 @@ func mulCplx(a, b complexity) complexity {
 	if logFac == "" {
 		logFac = b.logFac
 	}
-	return complexity{poly: poly, logFac: logFac}
+	expParam := a.expParam
+	if expParam == "" {
+		expParam = b.expParam
+	}
+	return complexity{poly: poly, logFac: logFac, expParam: expParam}
 }
 
 func fmtSym(s symExpr) string {
@@ -104,6 +112,9 @@ func fmtSym(s symExpr) string {
 }
 
 func fmtCplx(c complexity) string {
+	if c.expParam != "" {
+		return "2^" + c.expParam
+	}
 	polyStr := fmtSym(c.poly)
 	if c.logFac == "" {
 		return polyStr
@@ -346,6 +357,23 @@ func detectRecursion(algo *AlgoNode, params map[string]bool) (complexity, string
 	calls := collectFuncCalls(algo.Body, algo.Name)
 	if len(calls) == 0 {
 		return cplxO1, "", false
+	}
+	minusCounts := map[string]int{}
+	for _, call := range calls {
+		for i, arg := range call.Args {
+			if i >= len(algo.Params) {
+				break
+			}
+			p := algo.Params[i]
+			if params[p] && isParamMinusConst(arg, p) {
+				minusCounts[p]++
+			}
+		}
+	}
+	for p, cnt := range minusCounts {
+		if cnt >= 2 {
+			return complexity{expParam: p}, "2 recursive calls with " + p + " - c", true
+		}
 	}
 	for _, call := range calls {
 		for i, arg := range call.Args {
@@ -699,12 +727,18 @@ func (a *StaticAnalyzer) Analyze(algo *AlgoNode) ComplexityReport {
 	}
 
 	if cplx, reduceStr, isRecursive := detectRecursion(algo, params); isRecursive {
+		note := "T(n) = T(n-1) + O(1)"
+		if cplx.expParam != "" {
+			note = "T(n) = 2T(n-1) + O(1)"
+		} else if cplx.logFac != "" {
+			note = "T(n) = T(n/k) + O(1)"
+		}
 		return ComplexityReport{
 			AlgoName: algo.Name,
 			Params:   algo.Params,
 			BigO:     "O(" + fmtCplx(cplx) + ")",
 			Derivation: []DerivLine{
-				{0, "recursive call with " + reduceStr, "T(n) = T(n-1) + O(1)"},
+				{0, "recursive call with " + reduceStr, note},
 			},
 		}
 	}

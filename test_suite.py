@@ -100,6 +100,11 @@ CASES: list[Case] = [
          description="all negative -> returns NIL (prints as None)"),
     Case("nil_single_positive",  "demos/13_literals.psu", ["[1]", "1"],            "1"),
     Case("nil_single_negative",  "demos/13_literals.psu", ["[-1]", "1"],           "None"),
+
+    Case("fib_0",   "demos/14_fibonacci.psu", ["0"],  "0"),
+    Case("fib_1",   "demos/14_fibonacci.psu", ["1"],  "1"),
+    Case("fib_5",   "demos/14_fibonacci.psu", ["5"],  "5"),
+    Case("fib_10",  "demos/14_fibonacci.psu", ["10"], "55"),
 ]
 
 
