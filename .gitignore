@@ -11,4 +11,3 @@ wheels/
 
 # Go build artifacts
 /pseudo
-go/pseudo

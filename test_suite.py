@@ -231,8 +231,8 @@ def _parse_args(argv=None):
     p = argparse.ArgumentParser(description="Pseudocode interpreter test suite")
     p.add_argument(
         "--runner",
-        default="python main.py",
-        help='Command to invoke the interpreter, e.g. "python main.py" or "./pseudo"',
+        default="./pseudo",
+        help='Command to invoke the interpreter, e.g. "./pseudo" or "python main.py"',
     )
     p.add_argument(
         "--root",
@@ -260,7 +260,7 @@ def pytest_addoption(parser):
     parser.addoption(
         "--runner",
         action="store",
-        default="python main.py",
+        default="./pseudo",
         help="Interpreter command string",
     )
 
