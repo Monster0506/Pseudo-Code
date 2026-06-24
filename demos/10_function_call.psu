@@ -1,0 +1,14 @@
+// GCD via Euclidean algorithm, calls a helper, demonstrates multi-function files
+Algorithm gcd(a, b) do
+    while b != 0 do
+        tmp <- b
+        b <- a mod b
+        a <- tmp
+    end
+    return a
+end
+
+// lcm calls gcd - demonstrates one algorithm calling another
+Algorithm lcm(a, b) do
+    return (a * b) / gcd(a, b)
+end

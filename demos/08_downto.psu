@@ -1,0 +1,18 @@
+// Reverse an array in-place using downto and by-2 step
+// Demonstrates: for downto, for by, array write
+Algorithm reverseArray(A, n) do
+    left <- 0
+    right <- n - 1
+    while left < right do
+        tmp <- A[left]
+        A[left] <- A[right]
+        A[right] <- tmp
+        left <- left + 1
+        right <- right - 1
+    end
+    // Print elements in reverse index order using downto
+    for i <- n - 1 downto 0 do
+        print A[i]
+    end
+    return A
+end

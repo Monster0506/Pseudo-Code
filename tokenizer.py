@@ -2,23 +2,33 @@ import re
 from tokens import Token, keywords, operators, punctuation
 
 
-def tokenize(line: str) -> list[tuple[str, Token]]:
-    tokens = re.findall(r"-?\d+|\w+|<-|[+\-*/=<>!]+|[(),{}\[\]]|and|or|not", line)
-
+def tokenize(text: str) -> list[tuple[str, Token]]:
     result: list[tuple[str, Token]] = []
-    for token in tokens:
-        if token in keywords:
-            result.append((token, Token.KEYWORD))
-        elif token in operators:
-            result.append((token, Token.OPERATOR))
-        elif token in punctuation:
-            result.append((token, Token.PUNCTUATION))
-        elif re.match(r"^-?\d+$", token):
-            result.append((token, Token.LITERAL))
-        elif re.match(r'^".*"$|^\'.*\'$', token):
-            result.append((token, Token.LITERAL))
-        else:
-            result.append((token, Token.IDENTIFIER))
+    for line in text.splitlines():
+        # Strip inline and full-line comments
+        if "//" in line:
+            line = line[: line.index("//")]
+        line = line.strip()
+        if not line:
+            continue
+
+        tokens = re.findall(
+            r'"[^"]*"|\'[^\']*\'|-?\d+|\w+|<-|[+\-*/=<>!]+|[(),{}\[\]]', line
+        )
+
+        for token in tokens:
+            if token in keywords:
+                result.append((token, Token.KEYWORD))
+            elif token in operators:
+                result.append((token, Token.OPERATOR))
+            elif token in punctuation:
+                result.append((token, Token.PUNCTUATION))
+            elif re.match(r"^-?\d+$", token):
+                result.append((token, Token.LITERAL))
+            elif re.match(r'^"[^"]*"$|^\'[^\']*\'$', token):
+                result.append((token, Token.LITERAL))
+            else:
+                result.append((token, Token.IDENTIFIER))
     return result
 
 
@@ -28,6 +38,7 @@ def validate_syntax(tokens):
         "do": "end",
         "[": "]",
         "then": "end",
+        "repeat": "until",
     }
 
     stack = []

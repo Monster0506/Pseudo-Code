@@ -1,0 +1,10 @@
+// Count even numbers in an array using mod and boolean logic
+Algorithm countEvens(A, n) do
+    count <- 0
+    for i <- 0 to n - 1 do
+        if A[i] mod 2 = 0 and not (A[i] = 0) then
+            count <- count + 1
+        end
+    end
+    return count
+end

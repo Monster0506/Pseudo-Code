@@ -4,15 +4,18 @@ from enum import Enum, auto
 class OpCode(Enum):
     """Machine-level operation codes"""
 
-    ASN = auto()
-    CAL = auto()
-    AOP = auto()
-    COM = auto()
-    IDX = auto()
-    DRF = auto()
-    RET = auto()
-    SKP = auto()
-    JMP = auto()
+    ASN = auto()  # assign: ASN target value
+    CAL = auto()  # call:   CAL name arg... result
+    AOP = auto()  # arith:  AOP op left right result  (binary)
+    #          AOP op operand result     (unary: not)
+    COM = auto()  # compare: COM op left right result
+    IDX = auto()  # index:  IDX array index result
+    DRF = auto()  # deref (reserved)
+    RET = auto()  # return: RET [value]
+    SKP = auto()  # skip n instructions if last_cmp is FALSE
+    SKPT = auto()  # skip n instructions if last_cmp is TRUE
+    JMP = auto()  # jump:   JMP absolute_address
+    PRT = auto()  # print:  PRT value
 
 
 class Instruction:

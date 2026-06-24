@@ -38,6 +38,15 @@ class ArrayAccess(ASTNode):
         return f"ArrayAccess({self.array}, {self.index})"
 
 
+class FunctionCall(ASTNode):
+    def __init__(self, name, args):
+        self.name = name  # string
+        self.args = args  # list of ASTNode
+
+    def __repr__(self):
+        return f"FunctionCall({self.name}, {self.args})"
+
+
 class BinaryOp(ASTNode):
     def __init__(self, left, operator, right):
         self.left = left
@@ -86,13 +95,32 @@ class WhileLoop(ASTNode):
 
 
 class ForLoop(ASTNode):
-    def __init__(self, assignment, end, body):
+    def __init__(self, assignment, end, body, direction="to", step=None):
         self.assignment = assignment
         self.end = end
         self.body = body
+        self.direction = direction  # "to" or "downto"
+        self.step = step  # expression or None (defaults to +/-1)
 
     def __repr__(self):
-        return f"ForLoop({self.assignment}, {self.end}, {self.body})"
+        return f"ForLoop({self.assignment}, {self.end}, {self.body}, {self.direction})"
+
+
+class RepeatUntilLoop(ASTNode):
+    def __init__(self, body, condition):
+        self.body = body
+        self.condition = condition
+
+    def __repr__(self):
+        return f"RepeatUntilLoop({self.body}, {self.condition})"
+
+
+class PrintStatement(ASTNode):
+    def __init__(self, expr):
+        self.expr = expr
+
+    def __repr__(self):
+        return f"PrintStatement({self.expr})"
 
 
 class ReturnStatement(ASTNode):
@@ -119,6 +147,10 @@ class FunctionStatement(ASTNode):
 
     def __repr__(self):
         return f"Function({self.name}, {self.param_ids}, {self.body})"
+
+
+# Keywords that introduce literal values when seen in expression context
+_LITERAL_KEYWORDS = {"true", "false", "NIL", "null", "infinity"}
 
 
 class Parser:
@@ -169,10 +201,14 @@ class Parser:
             return self.parse_while_loop()
         elif value == "for":
             return self.parse_for_loop()
+        elif value == "repeat":
+            return self.parse_repeat_loop()
         elif value == "return":
             return self.parse_return_statement()
         elif value == "Algorithm":
             return self.parse_function()
+        elif value in ("print", "output"):
+            return self.parse_print_statement()
         elif token_type == Token.IDENTIFIER:
             return self.parse_assignment_or_expression()
         else:
@@ -191,10 +227,7 @@ class Parser:
             )
 
         then_block = []
-        while self.current_token() and self.current_token()[0] not in [
-            "else",
-            "end",
-        ]:
+        while self.current_token() and self.current_token()[0] not in ["else", "end"]:
             stmt = self.parse_statement()
             if stmt:
                 then_block.append(stmt)
@@ -228,13 +261,25 @@ class Parser:
         return WhileLoop(condition, Block(body))
 
     def parse_for_loop(self) -> ForLoop:
-        """This should be formatted as for ASSIGN to EXPR do BODY end"""
+        """for VAR <- INIT (to|downto) END [by STEP] do BODY end"""
         self.consume("for")
+        assignment = self.parse_assignment_or_expression()
 
-        assignment: Assignment = self.parse_assignment_or_expression()
+        tok = self.current_token()
+        if tok and tok[0] == "downto":
+            direction = "downto"
+            self.consume("downto")
+        else:
+            direction = "to"
+            self.consume("to")
 
-        self.consume("to")
-        expression = self.parse_expression()
+        end_expr = self.parse_expression()
+
+        step = None
+        if self.current_token() and self.current_token()[0] == "by":
+            self.consume("by")
+            step = self.parse_expression()
+
         self.consume("do")
 
         body = []
@@ -244,7 +289,26 @@ class Parser:
                 body.append(stmt)
 
         self.consume("end")
-        return ForLoop(assignment, expression, Block(body))
+        return ForLoop(assignment, end_expr, Block(body), direction, step)
+
+    def parse_repeat_loop(self) -> RepeatUntilLoop:
+        """repeat BODY until CONDITION"""
+        self.consume("repeat")
+
+        body = []
+        while self.current_token() and self.current_token()[0] != "until":
+            stmt = self.parse_statement()
+            if stmt:
+                body.append(stmt)
+
+        self.consume("until")
+        condition = self.parse_expression()
+        return RepeatUntilLoop(Block(body), condition)
+
+    def parse_print_statement(self) -> PrintStatement:
+        self.consume()  # consume "print" or "output"
+        expr = self.parse_expression()
+        return PrintStatement(expr)
 
     def parse_return_statement(self) -> ReturnStatement:
         self.consume("return")
@@ -314,7 +378,7 @@ class Parser:
     def parse_multiplicative(self) -> ASTNode:
         left = self.parse_unary()
 
-        while self.current_token() and self.current_token()[0] in ["*", "/"]:
+        while self.current_token() and self.current_token()[0] in ["*", "/", "mod"]:
             op_token = self.consume()
             right = self.parse_unary()
             left = BinaryOp(left, op_token[0], right)
@@ -339,6 +403,17 @@ class Parser:
                 index = self.parse_expression()
                 self.consume("]")
                 expr = ArrayAccess(expr, index)
+            elif token[0] == "(" and isinstance(expr, Identifier):
+                # Function call: identifier followed by (
+                self.consume("(")
+                args = []
+                if self.current_token() and self.current_token()[0] != ")":
+                    args.append(self.parse_expression())
+                    while self.current_token() and self.current_token()[0] == ",":
+                        self.consume(",")
+                        args.append(self.parse_expression())
+                self.consume(")")
+                expr = FunctionCall(expr.name, args)
             else:
                 break
 
@@ -352,6 +427,10 @@ class Parser:
         value, token_type = token
 
         if token_type == Token.LITERAL:
+            self.advance()
+            return Literal(value)
+
+        elif token_type == Token.KEYWORD and value in _LITERAL_KEYWORDS:
             self.advance()
             return Literal(value)
 
@@ -369,7 +448,7 @@ class Parser:
             return self.parse_array_literal()
 
         else:
-            raise SyntaxError(f"Unexpected token: {value}")
+            raise SyntaxError(f"Unexpected token in expression: {value!r}")
 
     def parse_array_literal(self) -> ArrayLiteral:
         self.consume("[")

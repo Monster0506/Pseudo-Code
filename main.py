@@ -8,13 +8,13 @@ from vm import VM
 
 def get_code(filename):
     with open(filename, "r") as f:
-        contents = f.read()
-    return contents
+        return f.read()
 
 
 tokens = tokenize(get_code(argv[1]))
-if not validate_syntax(tokens)[0]:
-    raise SyntaxError(validate_syntax(tokens)[1])
+valid, msg = validate_syntax(tokens)
+if not valid:
+    raise SyntaxError(msg)
 
 try:
     parser = Parser(tokens)
@@ -22,27 +22,32 @@ try:
 
     generator = Generator()
     instructions = generator.generate(ast)
+
     lines = [
         f"{i:{len(str(len(instructions)))+1}d}: {instr}"
         for i, instr in enumerate(instructions)
     ]
 
-    vm = VM(instructions)
+    vm = VM(instructions, generator.function_table)
+
+    # Use the entry function's declared parameter names when available
+    input_names = generator.entry_params or list(vm.inputs.keys())
+
     print("=" * 60)
-
-    print("Required inputs:", list(vm.inputs.keys()))
-    for var in vm.inputs.keys():
+    print("Required inputs:", input_names)
+    initial_vars = {}
+    for var in input_names:
         user_input = input(f"{var} = ")
-
         if user_input.startswith("["):
-            vm.inputs[var] = eval(user_input)
+            initial_vars[var] = eval(user_input)
         else:
             try:
-                vm.inputs[var] = int(user_input)
+                initial_vars[var] = int(user_input)
             except ValueError:
-                vm.inputs[var] = user_input
+                initial_vars[var] = user_input
     print("=" * 60)
-    result = vm.run(**vm.inputs)
+
+    result = vm.run(**initial_vars)
 
     print("\n".join(lines))
 

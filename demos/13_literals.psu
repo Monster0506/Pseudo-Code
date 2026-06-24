@@ -1,0 +1,16 @@
+// Demonstrates NIL sentinel, infinity, and boolean literals
+// Find the minimum positive value in an array, or NIL if none exist
+Algorithm minPositive(A, n) do
+    result <- infinity  // sentinel: no positive found yet
+    found <- false
+    for i <- 0 to n - 1 do
+        if A[i] > 0 and A[i] < result then
+            result <- A[i]
+            found <- true
+        end
+    end
+    if not found then
+        return NIL
+    end
+    return result
+end

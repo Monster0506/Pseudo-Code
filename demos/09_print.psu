@@ -1,0 +1,18 @@
+// Binary search with print tracing - demonstrates print/output statement
+Algorithm binarySearch(A, n, target) do
+    left <- 0
+    right <- n - 1
+    while left <= right do
+        mid <- (left + right) / 2
+        print mid  // trace the midpoint each iteration
+        if A[mid] = target then
+            return mid
+        end
+        if A[mid] < target then
+            left <- mid + 1
+        else
+            right <- mid - 1
+        end
+    end
+    return -1
+end

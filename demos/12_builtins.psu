@@ -1,0 +1,19 @@
+// Demonstrates built-in functions: length, abs, min, max, floor, ceil
+Algorithm arrayStats(A, n) do
+    total <- 0
+    smallest <- A[0]
+    largest <- A[0]
+    for i <- 0 to length(A) - 1 do
+        total <- total + abs(A[i])
+        if A[i] < smallest then
+            smallest <- A[i]
+        end
+        if A[i] > largest then
+            largest <- A[i]
+        end
+    end
+    print min(smallest, 0)  // min of smallest element and 0
+    print max(largest, 0)   // max of largest element and 0
+    print floor(total / n)  // average, rounded down
+    return total
+end

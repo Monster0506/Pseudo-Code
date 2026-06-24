@@ -16,6 +16,14 @@ keywords = {
     "for",
     "return",
     "Algorithm",
+    "true",
+    "false",
+    "NIL",
+    "null",
+    "infinity",
+    "print",
+    "output",
+    "repeat",
 }
 
 operators = {
@@ -33,6 +41,7 @@ operators = {
     "and",
     "or",
     "not",
+    "mod",
 }
 
 punctuation = {
@@ -44,4 +53,8 @@ punctuation = {
     "end",
     "do",
     "then",
+    "to",
+    "downto",
+    "by",
+    "until",
 }
