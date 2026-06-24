@@ -308,7 +308,26 @@ func (p *Parser) parseAssignOrExpr() (Node, error) {
 	return expr, nil
 }
 
-func (p *Parser) parseExpr() (Node, error) { return p.parseAdd() }
+func (p *Parser) parseExpr() (Node, error) { return p.parseCmp() }
+
+var cmpOps = map[string]bool{"<": true, ">": true, "<=": true, ">=": true, "=": true, "!=": true}
+
+func (p *Parser) parseCmp() (Node, error) {
+	left, err := p.parseAdd()
+	if err != nil {
+		return nil, err
+	}
+	for p.cur() != nil && cmpOps[p.cur().Value] {
+		op := p.cur().Value
+		p.advance()
+		right, err := p.parseAdd()
+		if err != nil {
+			return nil, err
+		}
+		left = &BinaryOpNode{left, right, op}
+	}
+	return left, nil
+}
 
 func (p *Parser) parseAdd() (Node, error) {
 	left, err := p.parseMul()
