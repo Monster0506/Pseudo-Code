@@ -23,6 +23,7 @@ type Token struct {
 var keywords = map[string]bool{
 	"if": true, "else": true, "while": true, "for": true,
 	"return": true, "Algorithm": true, "repeat": true,
+	"print": true, "output": true,
 }
 
 var operators = map[string]bool{

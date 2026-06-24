@@ -13,6 +13,7 @@ const (
 	SKP
 	SKPT
 	JMP
+	PRT
 )
 
 func (o OpCode) String() string {
@@ -33,6 +34,8 @@ func (o OpCode) String() string {
 		return "SKPT"
 	case JMP:
 		return "JMP"
+	case PRT:
+		return "PRT"
 	}
 	return "???"
 }

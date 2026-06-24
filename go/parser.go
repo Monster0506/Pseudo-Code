@@ -39,6 +39,7 @@ type ForNode struct {
 	Direction string
 	Step      Node
 }
+type PrintNode struct{ Expr Node }
 type RepeatNode struct {
 	Body *BlockNode
 	Cond Node
@@ -61,6 +62,7 @@ func (n *AssignNode) nodeTag()      {}
 func (n *IfNode) nodeTag()          {}
 func (n *WhileNode) nodeTag()       {}
 func (n *ForNode) nodeTag()         {}
+func (n *PrintNode) nodeTag()       {}
 func (n *RepeatNode) nodeTag()      {}
 func (n *ReturnNode) nodeTag()      {}
 func (n *BlockNode) nodeTag()       {}
@@ -128,6 +130,8 @@ func (p *Parser) parseStatement() (Node, error) {
 		return p.parseWhile()
 	case "for":
 		return p.parseFor()
+	case "print", "output":
+		return p.parsePrint()
 	case "repeat":
 		return p.parseRepeat()
 	case "return":
@@ -160,7 +164,7 @@ func (p *Parser) parseIf() (Node, error) {
 	p.advance()
 
 	var thenStmts []Node
-	for p.cur() != nil && p.cur().Value != "end" {
+	for p.cur() != nil && p.cur().Value != "else" && p.cur().Value != "end" {
 		s, err := p.parseStatement()
 		if err != nil {
 			return nil, err
@@ -169,10 +173,25 @@ func (p *Parser) parseIf() (Node, error) {
 			thenStmts = append(thenStmts, s)
 		}
 	}
+	var elseBlock *BlockNode
+	if p.cur() != nil && p.cur().Value == "else" {
+		p.advance()
+		var elseStmts []Node
+		for p.cur() != nil && p.cur().Value != "end" {
+			s, err := p.parseStatement()
+			if err != nil {
+				return nil, err
+			}
+			if s != nil {
+				elseStmts = append(elseStmts, s)
+			}
+		}
+		elseBlock = &BlockNode{elseStmts}
+	}
 	if _, err := p.consume("end"); err != nil {
 		return nil, err
 	}
-	return &IfNode{cond, &BlockNode{thenStmts}, nil}, nil
+	return &IfNode{cond, &BlockNode{thenStmts}, elseBlock}, nil
 }
 
 func (p *Parser) parseWhile() (Node, error) {
@@ -234,6 +253,15 @@ func (p *Parser) parseFor() (Node, error) {
 		return nil, err
 	}
 	return &ForNode{init, end, &BlockNode{stmts}, "to", nil}, nil
+}
+
+func (p *Parser) parsePrint() (Node, error) {
+	p.advance()
+	expr, err := p.parseExpr()
+	if err != nil {
+		return nil, err
+	}
+	return &PrintNode{expr}, nil
 }
 
 func (p *Parser) parseRepeat() (Node, error) {

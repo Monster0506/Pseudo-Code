@@ -143,6 +143,9 @@ func (vm *VM) execOne(instr Instruction) (int, error) {
 			vm.vars[result] = IntVal(0)
 		}
 
+	case PRT:
+		fmt.Println(vm.getVal(ops[0]).Format())
+
 	case SKP:
 		n, _ := strconv.Atoi(ops[0])
 		if !vm.lastCmp {
