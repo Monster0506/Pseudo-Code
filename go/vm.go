@@ -75,24 +75,35 @@ func (vm *VM) execOne(instr Instruction) (int, error) {
 
 	case AOP:
 		op := ops[0]
-		l, r := toInt(vm.getVal(ops[1])), toInt(vm.getVal(ops[2]))
-		var res int
-		switch op {
-		case "+":
-			res = l + r
-		case "-":
-			res = l - r
-		case "*":
-			res = l * r
-		case "/":
-			if r == 0 {
-				return 0, fmt.Errorf("division by zero")
+		if len(ops) == 3 {
+			result := !toBool(vm.getVal(ops[1]))
+			vm.vars[ops[2]] = boolToVal(result)
+			vm.lastCmp = result
+		} else {
+			l, r := toInt(vm.getVal(ops[1])), toInt(vm.getVal(ops[2]))
+			var res int
+			switch op {
+			case "+":
+				res = l + r
+			case "-":
+				res = l - r
+			case "*":
+				res = l * r
+			case "/":
+				if r == 0 {
+					return 0, fmt.Errorf("division by zero")
+				}
+				res = l / r
+			case "mod":
+				if r == 0 {
+					return 0, fmt.Errorf("modulo by zero")
+				}
+				res = l % r
+			default:
+				return 0, fmt.Errorf("unknown AOP: %s", op)
 			}
-			res = l / r
-		default:
-			return 0, fmt.Errorf("unknown AOP: %s", op)
+			vm.vars[ops[3]] = IntVal(res)
 		}
-		vm.vars[ops[3]] = IntVal(res)
 
 	case COM:
 		op, leftOp, rightOp, result := ops[0], ops[1], ops[2], ops[3]
@@ -112,10 +123,14 @@ func (vm *VM) execOne(instr Instruction) (int, error) {
 			cmp = lv == rv
 		case "!=":
 			cmp = lv != rv
+		case "and":
+			cmp = toBool(vm.getVal(leftOp)) && toBool(vm.getVal(rightOp))
+		case "or":
+			cmp = toBool(vm.getVal(leftOp)) || toBool(vm.getVal(rightOp))
 		default:
 			cmp = false
 		}
-		vm.vars[result] = IntVal(map[bool]int{true: 1, false: 0}[cmp])
+		vm.vars[result] = boolToVal(cmp)
 		vm.lastCmp = cmp
 
 	case IDX:

@@ -28,6 +28,7 @@ var keywords = map[string]bool{
 var operators = map[string]bool{
 	"+": true, "-": true, "*": true, "/": true, "=": true,
 	"<-": true, "!=": true, "<": true, ">": true, "<=": true, ">=": true,
+	"and": true, "or": true, "not": true, "mod": true,
 }
 
 var punctuation = map[string]bool{

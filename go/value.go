@@ -55,6 +55,25 @@ func toInt(v Value) int {
 	return 0
 }
 
+func toBool(v Value) bool {
+	switch v.Kind {
+	case TypeInt:
+		return v.IntVal != 0
+	case TypeString:
+		return v.StrVal != ""
+	case TypeArray:
+		return len(v.ArrVal) > 0
+	}
+	return false
+}
+
+func boolToVal(b bool) Value {
+	if b {
+		return IntVal(1)
+	}
+	return IntVal(0)
+}
+
 func deepCopyVars(src map[string]Value) map[string]Value {
 	dst := make(map[string]Value, len(src))
 	for k, v := range src {

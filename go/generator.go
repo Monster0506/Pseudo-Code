@@ -157,7 +157,7 @@ func (g *Generator) visitBinaryOp(node *BinaryOpNode) (string, error) {
 	}
 	t := g.newTemp()
 	switch node.Op {
-	case "+", "-", "*", "/":
+	case "+", "-", "*", "/", "mod":
 		g.emit(AOP, node.Op, left, right, t)
 	default:
 		g.emit(COM, node.Op, left, right, t)

@@ -308,7 +308,39 @@ func (p *Parser) parseAssignOrExpr() (Node, error) {
 	return expr, nil
 }
 
-func (p *Parser) parseExpr() (Node, error) { return p.parseCmp() }
+func (p *Parser) parseExpr() (Node, error) { return p.parseOr() }
+
+func (p *Parser) parseOr() (Node, error) {
+	left, err := p.parseAnd()
+	if err != nil {
+		return nil, err
+	}
+	for p.cur() != nil && p.cur().Value == "or" {
+		p.advance()
+		right, err := p.parseAnd()
+		if err != nil {
+			return nil, err
+		}
+		left = &BinaryOpNode{left, right, "or"}
+	}
+	return left, nil
+}
+
+func (p *Parser) parseAnd() (Node, error) {
+	left, err := p.parseCmp()
+	if err != nil {
+		return nil, err
+	}
+	for p.cur() != nil && p.cur().Value == "and" {
+		p.advance()
+		right, err := p.parseCmp()
+		if err != nil {
+			return nil, err
+		}
+		left = &BinaryOpNode{left, right, "and"}
+	}
+	return left, nil
+}
 
 var cmpOps = map[string]bool{"<": true, ">": true, "<=": true, ">=": true, "=": true, "!=": true}
 
@@ -351,7 +383,7 @@ func (p *Parser) parseMul() (Node, error) {
 	if err != nil {
 		return nil, err
 	}
-	for p.cur() != nil && (p.cur().Value == "*" || p.cur().Value == "/") {
+	for p.cur() != nil && (p.cur().Value == "*" || p.cur().Value == "/" || p.cur().Value == "mod") {
 		op := p.cur().Value
 		p.advance()
 		right, err := p.parseUnary()
@@ -364,6 +396,14 @@ func (p *Parser) parseMul() (Node, error) {
 }
 
 func (p *Parser) parseUnary() (Node, error) {
+	if p.cur() != nil && p.cur().Value == "not" {
+		p.advance()
+		operand, err := p.parseUnary()
+		if err != nil {
+			return nil, err
+		}
+		return &UnaryOpNode{"not", operand}, nil
+	}
 	return p.parsePostfix()
 }
 
