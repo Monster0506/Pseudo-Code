@@ -35,6 +35,7 @@ var operators = map[string]bool{
 var punctuation = map[string]bool{
 	"(": true, ")": true, "[": true, "]": true, ",": true,
 	"end": true, "do": true, "then": true, "to": true, "until": true,
+	"downto": true,
 }
 
 var tokenRe = regexp.MustCompile(`"[^"]*"|'[^']*'|-?\d+|\w+|<-|[+\-*/=<>!]+|[(),\[\]]`)

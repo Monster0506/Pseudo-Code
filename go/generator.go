@@ -270,7 +270,11 @@ func (g *Generator) visitFor(node *ForNode) error {
 		return err
 	}
 	tmpCmp := g.newTemp()
-	g.emit(COM, "<=", loopVar, endVal, tmpCmp)
+	cmpOp := "<="
+	if node.Direction == "downto" {
+		cmpOp = ">="
+	}
+	g.emit(COM, cmpOp, loopVar, endVal, tmpCmp)
 
 	skpIdx := len(g.instrs)
 	g.emit(SKP, "0")
@@ -281,7 +285,11 @@ func (g *Generator) visitFor(node *ForNode) error {
 	}
 
 	tmpInc := g.newTemp()
-	g.emit(AOP, "+", loopVar, "1", tmpInc)
+	if node.Direction == "downto" {
+		g.emit(AOP, "-", loopVar, "1", tmpInc)
+	} else {
+		g.emit(AOP, "+", loopVar, "1", tmpInc)
+	}
 	g.emit(ASN, loopVar, tmpInc)
 	g.emit(JMP, strconv.Itoa(loopStart))
 

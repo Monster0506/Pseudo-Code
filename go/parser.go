@@ -229,8 +229,14 @@ func (p *Parser) parseFor() (Node, error) {
 	if err != nil {
 		return nil, err
 	}
-	if _, err := p.consume("to"); err != nil {
-		return nil, err
+	direction := "to"
+	if p.cur() != nil && p.cur().Value == "downto" {
+		direction = "downto"
+		p.advance()
+	} else {
+		if _, err := p.consume("to"); err != nil {
+			return nil, err
+		}
 	}
 	end, err := p.parseExpr()
 	if err != nil {
@@ -252,7 +258,7 @@ func (p *Parser) parseFor() (Node, error) {
 	if _, err := p.consume("end"); err != nil {
 		return nil, err
 	}
-	return &ForNode{init, end, &BlockNode{stmts}, "to", nil}, nil
+	return &ForNode{init, end, &BlockNode{stmts}, direction, nil}, nil
 }
 
 func (p *Parser) parsePrint() (Node, error) {
