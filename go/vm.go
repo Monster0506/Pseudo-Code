@@ -149,6 +149,12 @@ func (vm *VM) execOne(instr Instruction) (int, error) {
 			return n, nil
 		}
 
+	case SKPT:
+		n, _ := strconv.Atoi(ops[0])
+		if vm.lastCmp {
+			return n, nil
+		}
+
 	case JMP:
 		target, _ := strconv.Atoi(ops[0])
 		return target - vm.pc - 1, nil

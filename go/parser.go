@@ -39,6 +39,10 @@ type ForNode struct {
 	Direction string
 	Step      Node
 }
+type RepeatNode struct {
+	Body *BlockNode
+	Cond Node
+}
 type ReturnNode struct{ Value Node }
 type BlockNode struct{ Stmts []Node }
 type AlgoNode struct {
@@ -57,6 +61,7 @@ func (n *AssignNode) nodeTag()      {}
 func (n *IfNode) nodeTag()          {}
 func (n *WhileNode) nodeTag()       {}
 func (n *ForNode) nodeTag()         {}
+func (n *RepeatNode) nodeTag()      {}
 func (n *ReturnNode) nodeTag()      {}
 func (n *BlockNode) nodeTag()       {}
 func (n *AlgoNode) nodeTag()        {}
@@ -123,6 +128,8 @@ func (p *Parser) parseStatement() (Node, error) {
 		return p.parseWhile()
 	case "for":
 		return p.parseFor()
+	case "repeat":
+		return p.parseRepeat()
 	case "return":
 		return p.parseReturn()
 	case "Algorithm":
@@ -227,6 +234,30 @@ func (p *Parser) parseFor() (Node, error) {
 		return nil, err
 	}
 	return &ForNode{init, end, &BlockNode{stmts}, "to", nil}, nil
+}
+
+func (p *Parser) parseRepeat() (Node, error) {
+	if _, err := p.consume("repeat"); err != nil {
+		return nil, err
+	}
+	var stmts []Node
+	for p.cur() != nil && p.cur().Value != "until" {
+		s, err := p.parseStatement()
+		if err != nil {
+			return nil, err
+		}
+		if s != nil {
+			stmts = append(stmts, s)
+		}
+	}
+	if _, err := p.consume("until"); err != nil {
+		return nil, err
+	}
+	cond, err := p.parseExpr()
+	if err != nil {
+		return nil, err
+	}
+	return &RepeatNode{&BlockNode{stmts}, cond}, nil
 }
 
 func (p *Parser) parseReturn() (Node, error) {

@@ -97,6 +97,8 @@ func (g *Generator) visit(n Node) (string, error) {
 		return "", g.visitWhile(node)
 	case *ForNode:
 		return "", g.visitFor(node)
+	case *RepeatNode:
+		return "", g.visitRepeat(node)
 	case *ReturnNode:
 		return "", g.visitReturn(node)
 	case *BlockNode:
@@ -283,6 +285,19 @@ func (g *Generator) visitFor(node *ForNode) error {
 
 	bodySize := len(g.instrs) - bodyStart
 	g.instrs[skpIdx] = Instruction{SKP, []string{strconv.Itoa(bodySize)}}
+	return nil
+}
+
+func (g *Generator) visitRepeat(node *RepeatNode) error {
+	bodyStart := len(g.instrs)
+	if err := g.visitBlock(node.Body); err != nil {
+		return err
+	}
+	if _, err := g.visit(node.Cond); err != nil {
+		return err
+	}
+	g.emit(SKPT, "1")
+	g.emit(JMP, strconv.Itoa(bodyStart))
 	return nil
 }
 

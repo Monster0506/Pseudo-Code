@@ -11,6 +11,7 @@ const (
 	IDX
 	RET
 	SKP
+	SKPT
 	JMP
 )
 
@@ -28,6 +29,8 @@ func (o OpCode) String() string {
 		return "RET"
 	case SKP:
 		return "SKP"
+	case SKPT:
+		return "SKPT"
 	case JMP:
 		return "JMP"
 	}

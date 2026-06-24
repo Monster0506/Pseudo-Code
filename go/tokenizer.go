@@ -22,7 +22,7 @@ type Token struct {
 
 var keywords = map[string]bool{
 	"if": true, "else": true, "while": true, "for": true,
-	"return": true, "Algorithm": true,
+	"return": true, "Algorithm": true, "repeat": true,
 }
 
 var operators = map[string]bool{
@@ -33,7 +33,7 @@ var operators = map[string]bool{
 
 var punctuation = map[string]bool{
 	"(": true, ")": true, "[": true, "]": true, ",": true,
-	"end": true, "do": true, "then": true, "to": true,
+	"end": true, "do": true, "then": true, "to": true, "until": true,
 }
 
 var tokenRe = regexp.MustCompile(`"[^"]*"|'[^']*'|-?\d+|\w+|<-|[+\-*/=<>!]+|[(),\[\]]`)
