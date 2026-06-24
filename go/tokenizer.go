@@ -24,6 +24,7 @@ var keywords = map[string]bool{
 	"if": true, "else": true, "while": true, "for": true,
 	"return": true, "Algorithm": true, "repeat": true,
 	"print": true, "output": true,
+	"true": true, "false": true, "NIL": true, "null": true, "infinity": true,
 }
 
 var operators = map[string]bool{

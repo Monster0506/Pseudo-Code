@@ -526,12 +526,20 @@ func (p *Parser) parsePostfix() (Node, error) {
 	return expr, nil
 }
 
+var literalKeywords = map[string]bool{
+	"true": true, "false": true, "NIL": true, "null": true, "infinity": true,
+}
+
 func (p *Parser) parsePrimary() (Node, error) {
 	t := p.cur()
 	if t == nil {
 		return nil, fmt.Errorf("unexpected end of input")
 	}
 	if t.Type == LITERAL {
+		p.advance()
+		return &LiteralNode{t.Value}, nil
+	}
+	if t.Type == KEYWORD && literalKeywords[t.Value] {
 		p.advance()
 		return &LiteralNode{t.Value}, nil
 	}

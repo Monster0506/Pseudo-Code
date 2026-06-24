@@ -32,9 +32,19 @@ func NewVM(instrs []Instruction, funcTable map[string]FuncEntry) *VM {
 }
 
 func (vm *VM) getVal(s string) Value {
+	switch s {
+	case "true":
+		return BoolVal(true)
+	case "false":
+		return BoolVal(false)
+	case "NIL", "null":
+		return Nil
+	case "infinity":
+		return FloatValue(math.Inf(1))
+	}
 	if (strings.HasPrefix(s, `"`) && strings.HasSuffix(s, `"`)) ||
 		(strings.HasPrefix(s, `'`) && strings.HasSuffix(s, `'`)) {
-		return IntVal(0)
+		return StrVal(s[1 : len(s)-1])
 	}
 	if n, err := strconv.Atoi(s); err == nil {
 		return IntVal(n)
@@ -115,26 +125,26 @@ func (vm *VM) execOne(instr Instruction) (int, error) {
 
 	case COM:
 		op, leftOp, rightOp, result := ops[0], ops[1], ops[2], ops[3]
-		lv := toInt(vm.getVal(leftOp))
-		rv := toInt(vm.getVal(rightOp))
+		lv := vm.getVal(leftOp)
+		rv := vm.getVal(rightOp)
 		var cmp bool
 		switch op {
 		case "<":
-			cmp = lv < rv
+			cmp = numericLess(lv, rv)
 		case ">":
-			cmp = lv > rv
+			cmp = numericLess(rv, lv)
 		case "<=":
-			cmp = lv <= rv
+			cmp = !numericLess(rv, lv)
 		case ">=":
-			cmp = lv >= rv
+			cmp = !numericLess(lv, rv)
 		case "=":
-			cmp = lv == rv
+			cmp = numericEqual(lv, rv)
 		case "!=":
-			cmp = lv != rv
+			cmp = !numericEqual(lv, rv)
 		case "and":
-			cmp = toBool(vm.getVal(leftOp)) && toBool(vm.getVal(rightOp))
+			cmp = toBool(lv) && toBool(rv)
 		case "or":
-			cmp = toBool(vm.getVal(leftOp)) || toBool(vm.getVal(rightOp))
+			cmp = toBool(lv) || toBool(rv)
 		default:
 			cmp = false
 		}
