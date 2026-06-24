@@ -258,7 +258,9 @@ func hasLogUpdateInStmt(n Node, condVars map[string]bool) bool {
 			varName = id.Name
 		}
 		if condVars[varName] {
-			return exprContainsOp(node.Value, "*") || exprContainsOp(node.Value, "/")
+			return exprContainsOp(node.Value, "*") ||
+				exprContainsOp(node.Value, "/") ||
+				(exprContainsOp(node.Value, "mod") && exprUsesVars(node.Value, condVars))
 		}
 		if exprUsesVars(node.Value, condVars) && exprContainsOp(node.Value, "/") {
 			return true
