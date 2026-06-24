@@ -21,6 +21,7 @@ type VM struct {
 	lastCmp   bool
 	retVal    *Value
 	callStack []CallFrame
+	Counters  *VMCounters
 }
 
 func NewVM(instrs []Instruction, funcTable map[string]FuncEntry) *VM {
@@ -81,6 +82,9 @@ func (vm *VM) execOne(instr Instruction) (int, error) {
 
 	switch instr.Opcode {
 	case ASN:
+		if vm.Counters != nil && strings.Contains(ops[0], "[") {
+			vm.Counters.ArrayWrites++
+		}
 		if len(ops) > 2 {
 			elems := make([]Value, len(ops)-1)
 			for i, e := range ops[1:] {
@@ -124,6 +128,9 @@ func (vm *VM) execOne(instr Instruction) (int, error) {
 		}
 
 	case COM:
+		if vm.Counters != nil {
+			vm.Counters.Comparisons++
+		}
 		op, leftOp, rightOp, result := ops[0], ops[1], ops[2], ops[3]
 		lv := vm.getVal(leftOp)
 		rv := vm.getVal(rightOp)
@@ -152,6 +159,9 @@ func (vm *VM) execOne(instr Instruction) (int, error) {
 		vm.lastCmp = cmp
 
 	case IDX:
+		if vm.Counters != nil {
+			vm.Counters.ArrayReads++
+		}
 		arrName, idxOp, result := ops[0], ops[1], ops[2]
 		arr := vm.vars[arrName]
 		idx := toInt(vm.getVal(idxOp))
@@ -208,7 +218,11 @@ func (vm *VM) execOne(instr Instruction) (int, error) {
 
 	case JMP:
 		target, _ := strconv.Atoi(ops[0])
-		return target - vm.pc - 1, nil
+		delta := target - vm.pc - 1
+		if vm.Counters != nil && delta < 0 {
+			vm.Counters.LoopIters++
+		}
+		return delta, nil
 
 	case RET:
 		var rv Value

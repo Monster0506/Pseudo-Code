@@ -113,6 +113,7 @@ def run_case(case: Case, runner: list[str], repo_root: Path) -> tuple[str, list[
         input=stdin_data,
         capture_output=True,
         text=True,
+        encoding="utf-8",
         cwd=str(repo_root),
     )
 
@@ -129,24 +130,22 @@ def run_case(case: Case, runner: list[str], repo_root: Path) -> tuple[str, list[
 
 def parse_output(output: str) -> tuple[str, list[str]]:
     parts = output.split(SEP)
-    if len(parts) < 4:
-        raise ValueError(f"Unexpected output format (found {len(parts)} sections):\n{output}")
-
-    content_section = parts[2]
-    return_section = parts[3]
 
     return_value = ""
-    for line in return_section.splitlines():
-        line = line.strip()
-        if line.startswith("Return value:"):
-            return_value = line[len("Return value:"):].strip()
-            break
+    instr_section = None
+    for part in parts:
+        for line in part.splitlines():
+            if line.strip().startswith("Return value:"):
+                return_value = line.strip()[len("Return value:"):].strip()
+        if re.search(r"^\s*\d+:", part, re.MULTILINE):
+            instr_section = part
 
     print_lines = []
-    for line in content_section.splitlines():
-        stripped = line.strip()
-        if stripped and not re.match(r"^\d+:", stripped):
-            print_lines.append(stripped)
+    if instr_section:
+        for line in instr_section.splitlines():
+            stripped = line.strip()
+            if stripped and not re.match(r"^\d+:", stripped):
+                print_lines.append(stripped)
 
     return return_value, print_lines
 
@@ -208,7 +207,7 @@ def print_summary(results: list[TestResult]) -> int:
     if failed:
         print()
         for r in failed:
-            print(f"\033[31m{'─' * 60}\033[0m")
+            print(f"\033[31m{'-' * 60}\033[0m")
             print(f"FAILED: {r.case.name}")
             if r.case.description:
                 print(f"  ({r.case.description})")

@@ -31,11 +31,23 @@ func main() {
 		os.Exit(1)
 	}
 
+	var entryAlgo *AlgoNode
+	for _, s := range ast.Stmts {
+		if a, ok := s.(*AlgoNode); ok {
+			entryAlgo = a
+			break
+		}
+	}
+
 	gen := NewGenerator()
 	instrs, funcTable, entryParams, err := gen.Generate(ast)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "codegen error:", err)
 		os.Exit(1)
+	}
+
+	if entryAlgo != nil {
+		PrintComplexityReport((&StaticAnalyzer{}).Analyze(entryAlgo))
 	}
 
 	fmt.Println(sep)
