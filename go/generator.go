@@ -55,6 +55,14 @@ func (g *Generator) Generate(ast *BlockNode) ([]Instruction, map[string]FuncEntr
 			return nil, nil, nil, err
 		}
 		g.emit(RET)
+
+		for _, fn := range funcs[1:] {
+			g.funcTable[fn.Name] = FuncEntry{len(g.instrs), fn.Params}
+			if err := g.visitBlock(fn.Body); err != nil {
+				return nil, nil, nil, err
+			}
+			g.emit(RET)
+		}
 	}
 
 	for _, s := range bare {
@@ -85,6 +93,8 @@ func (g *Generator) visit(n Node) (string, error) {
 		return g.visitArrayLit(node)
 	case *ArrayAccessNode:
 		return g.visitArrayAccess(node)
+	case *FuncCallNode:
+		return g.visitFuncCall(node)
 	case *BinaryOpNode:
 		return g.visitBinaryOp(node)
 	case *UnaryOpNode:
@@ -147,6 +157,22 @@ func (g *Generator) visitArrayAccess(node *ArrayAccessNode) (string, error) {
 	}
 	t := g.newTemp()
 	g.emit(IDX, arrName, idx, t)
+	return t, nil
+}
+
+func (g *Generator) visitFuncCall(node *FuncCallNode) (string, error) {
+	args := make([]string, len(node.Args))
+	for i, a := range node.Args {
+		v, err := g.visit(a)
+		if err != nil {
+			return "", err
+		}
+		args[i] = v
+	}
+	t := g.newTemp()
+	ops := append([]string{node.Name}, args...)
+	ops = append(ops, t)
+	g.emit(CAL, ops...)
 	return t, nil
 }
 

@@ -6,6 +6,7 @@ type OpCode int
 
 const (
 	ASN OpCode = iota
+	CAL
 	AOP
 	COM
 	IDX
@@ -20,6 +21,8 @@ func (o OpCode) String() string {
 	switch o {
 	case ASN:
 		return "ASN"
+	case CAL:
+		return "CAL"
 	case AOP:
 		return "AOP"
 	case COM:

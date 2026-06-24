@@ -143,6 +143,10 @@ func (vm *VM) execOne(instr Instruction) (int, error) {
 			vm.vars[result] = IntVal(0)
 		}
 
+	case CAL:
+		resultTarget := ops[len(ops)-1]
+		vm.vars[resultTarget] = IntVal(0)
+
 	case PRT:
 		fmt.Println(vm.getVal(ops[0]).Format())
 

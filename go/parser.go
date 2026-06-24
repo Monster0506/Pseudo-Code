@@ -11,6 +11,10 @@ type ArrayAccessNode struct {
 	Array Node
 	Index Node
 }
+type FuncCallNode struct {
+	Name string
+	Args []Node
+}
 type BinaryOpNode struct {
 	Left, Right Node
 	Op          string
@@ -56,6 +60,7 @@ func (n *LiteralNode) nodeTag()     {}
 func (n *IdentNode) nodeTag()       {}
 func (n *ArrayLitNode) nodeTag()    {}
 func (n *ArrayAccessNode) nodeTag() {}
+func (n *FuncCallNode) nodeTag()    {}
 func (n *BinaryOpNode) nodeTag()    {}
 func (n *UnaryOpNode) nodeTag()     {}
 func (n *AssignNode) nodeTag()      {}
@@ -477,16 +482,46 @@ func (p *Parser) parsePostfix() (Node, error) {
 	if err != nil {
 		return nil, err
 	}
-	for p.cur() != nil && p.cur().Value == "[" {
-		p.advance()
-		idx, err := p.parseExpr()
-		if err != nil {
-			return nil, err
+	for p.cur() != nil {
+		if p.cur().Value == "[" {
+			p.advance()
+			idx, err := p.parseExpr()
+			if err != nil {
+				return nil, err
+			}
+			if _, err := p.consume("]"); err != nil {
+				return nil, err
+			}
+			expr = &ArrayAccessNode{expr, idx}
+		} else if p.cur().Value == "(" {
+			ident, ok := expr.(*IdentNode)
+			if !ok {
+				break
+			}
+			p.advance()
+			var args []Node
+			if p.cur() != nil && p.cur().Value != ")" {
+				a, err := p.parseExpr()
+				if err != nil {
+					return nil, err
+				}
+				args = append(args, a)
+				for p.cur() != nil && p.cur().Value == "," {
+					p.advance()
+					a, err = p.parseExpr()
+					if err != nil {
+						return nil, err
+					}
+					args = append(args, a)
+				}
+			}
+			if _, err := p.consume(")"); err != nil {
+				return nil, err
+			}
+			expr = &FuncCallNode{ident.Name, args}
+		} else {
+			break
 		}
-		if _, err := p.consume("]"); err != nil {
-			return nil, err
-		}
-		expr = &ArrayAccessNode{expr, idx}
 	}
 	return expr, nil
 }
