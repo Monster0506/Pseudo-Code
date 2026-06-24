@@ -45,7 +45,11 @@ func main() {
 		os.Exit(1)
 	}
 
-	sa := &StaticAnalyzer{}
+	sa := &StaticAnalyzer{FuncCplx: map[string]complexity{}}
+	for _, algo := range allAlgos {
+		r := sa.Analyze(algo)
+		sa.FuncCplx[algo.Name] = r.RawCplx
+	}
 	for _, algo := range allAlgos {
 		PrintComplexityReport(sa.Analyze(algo))
 	}

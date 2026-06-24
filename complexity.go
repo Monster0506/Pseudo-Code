@@ -18,6 +18,7 @@ type ComplexityReport struct {
 	Footer     string
 	Derivation []DerivLine
 	OpTable    []OpRow
+	RawCplx    complexity
 }
 
 type DerivLine struct {
@@ -525,7 +526,7 @@ type walkResult struct {
 	bounds []string
 }
 
-func walkSym(b *BlockNode, params map[string]bool, ctx complexity, ctxBounds []string, depth int, lines *[]DerivLine) walkResult {
+func walkSym(b *BlockNode, params map[string]bool, ctx complexity, ctxBounds []string, depth int, lines *[]DerivLine, funcCplx map[string]complexity) walkResult {
 	best := walkResult{ctx, ctxBounds}
 
 	for _, stmt := range b.Stmts {
@@ -538,7 +539,7 @@ func walkSym(b *BlockNode, params map[string]bool, ctx complexity, ctxBounds []s
 			if !hasLoops(n.Body) {
 				*lines = append(*lines, DerivLine{depth + 1, bodyLabel(n.Body), "O(1)"})
 			}
-			r := walkSym(n.Body, params, inner, innerBounds, depth+1, lines)
+			r := walkSym(n.Body, params, inner, innerBounds, depth+1, lines, funcCplx)
 			if cplxDegree(r.cplx) > cplxDegree(best.cplx) {
 				best = r
 			}
@@ -555,7 +556,7 @@ func walkSym(b *BlockNode, params map[string]bool, ctx complexity, ctxBounds []s
 			if !hasLoops(n.Body) {
 				*lines = append(*lines, DerivLine{depth + 1, bodyLabel(n.Body), "O(1)"})
 			}
-			r := walkSym(n.Body, params, inner, innerBounds, depth+1, lines)
+			r := walkSym(n.Body, params, inner, innerBounds, depth+1, lines, funcCplx)
 			if cplxDegree(r.cplx) > cplxDegree(best.cplx) {
 				best = r
 			}
@@ -572,25 +573,75 @@ func walkSym(b *BlockNode, params map[string]bool, ctx complexity, ctxBounds []s
 			if !hasLoops(n.Body) {
 				*lines = append(*lines, DerivLine{depth + 1, bodyLabel(n.Body), "O(1)"})
 			}
-			r := walkSym(n.Body, params, inner, innerBounds, depth+1, lines)
+			r := walkSym(n.Body, params, inner, innerBounds, depth+1, lines, funcCplx)
 			if cplxDegree(r.cplx) > cplxDegree(best.cplx) {
 				best = r
 			}
 
 		case *IfNode:
-			r := walkSym(n.Then, params, ctx, ctxBounds, depth, lines)
+			r := walkSym(n.Then, params, ctx, ctxBounds, depth, lines, funcCplx)
 			if cplxDegree(r.cplx) > cplxDegree(best.cplx) {
 				best = r
 			}
 			if n.Else != nil {
-				r2 := walkSym(n.Else, params, ctx, ctxBounds, depth, lines)
+				r2 := walkSym(n.Else, params, ctx, ctxBounds, depth, lines, funcCplx)
 				if cplxDegree(r2.cplx) > cplxDegree(best.cplx) {
 					best = r2
+				}
+			}
+
+		default:
+			if fc, found := maxCallCplxInNode(stmt, funcCplx); found {
+				scaled := mulCplx(ctx, fc)
+				if cplxDegree(scaled) > cplxDegree(best.cplx) {
+					best = walkResult{scaled, append(append([]string{}, ctxBounds...), fmtCplx(fc))}
 				}
 			}
 		}
 	}
 	return best
+}
+
+func maxCallCplxInNode(n Node, fc map[string]complexity) (complexity, bool) {
+	best := cplxO1
+	found := false
+	var walk func(Node)
+	walk = func(x Node) {
+		switch node := x.(type) {
+		case *FuncCallNode:
+			if c, ok := fc[node.Name]; ok && (!found || cplxDegree(c) > cplxDegree(best)) {
+				best, found = c, true
+			}
+			for _, a := range node.Args {
+				walk(a)
+			}
+		case *BinaryOpNode:
+			walk(node.Left)
+			walk(node.Right)
+		case *UnaryOpNode:
+			walk(node.Operand)
+		case *AssignNode:
+			walk(node.Value)
+		case *ReturnNode:
+			if node.Value != nil {
+				walk(node.Value)
+			}
+		case *PrintNode:
+			walk(node.Expr)
+		case *BlockNode:
+			for _, s := range node.Stmts {
+				walk(s)
+			}
+		case *IfNode:
+			walk(node.Cond)
+			walk(node.Then)
+			if node.Else != nil {
+				walk(node.Else)
+			}
+		}
+	}
+	walk(n)
+	return best, found
 }
 
 type weightedOp struct {
@@ -718,12 +769,18 @@ func buildOpTable(b *BlockNode, params map[string]bool) []OpRow {
 	return rows
 }
 
-type StaticAnalyzer struct{}
+type StaticAnalyzer struct {
+	FuncCplx map[string]complexity
+}
 
 func (a *StaticAnalyzer) Analyze(algo *AlgoNode) ComplexityReport {
 	params := make(map[string]bool, len(algo.Params))
 	for _, p := range algo.Params {
 		params[p] = true
+	}
+	fc := a.FuncCplx
+	if fc == nil {
+		fc = map[string]complexity{}
 	}
 
 	if cplx, reduceStr, isRecursive := detectRecursion(algo, params); isRecursive {
@@ -740,11 +797,12 @@ func (a *StaticAnalyzer) Analyze(algo *AlgoNode) ComplexityReport {
 			Derivation: []DerivLine{
 				{0, "recursive call with " + reduceStr, note},
 			},
+			RawCplx: cplx,
 		}
 	}
 
 	var lines []DerivLine
-	best := walkSym(algo.Body, params, cplxO1, nil, 0, &lines)
+	best := walkSym(algo.Body, params, cplxO1, nil, 0, &lines, fc)
 
 	footer := ""
 	if len(best.bounds) > 0 {
@@ -758,6 +816,7 @@ func (a *StaticAnalyzer) Analyze(algo *AlgoNode) ComplexityReport {
 		Footer:     footer,
 		Derivation: lines,
 		OpTable:    buildOpTable(algo.Body, params),
+		RawCplx:    best.cplx,
 	}
 }
 
