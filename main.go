@@ -31,11 +31,10 @@ func main() {
 		os.Exit(1)
 	}
 
-	var entryAlgo *AlgoNode
+	var allAlgos []*AlgoNode
 	for _, s := range ast.Stmts {
 		if a, ok := s.(*AlgoNode); ok {
-			entryAlgo = a
-			break
+			allAlgos = append(allAlgos, a)
 		}
 	}
 
@@ -46,8 +45,9 @@ func main() {
 		os.Exit(1)
 	}
 
-	if entryAlgo != nil {
-		PrintComplexityReport((&StaticAnalyzer{}).Analyze(entryAlgo))
+	sa := &StaticAnalyzer{}
+	for _, algo := range allAlgos {
+		PrintComplexityReport(sa.Analyze(algo))
 	}
 
 	fmt.Println(sep)
